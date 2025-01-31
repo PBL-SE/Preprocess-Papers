@@ -1,0 +1,5 @@
+pypdf2
+torch
+transformers
+pandas
+requests
