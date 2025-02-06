@@ -86,18 +86,18 @@ df = pd.read_csv("third_arxiv_dump.csv")
 if "PDF Link" not in df.columns:
     raise KeyError("❌ Column 'PDF Link' not found in dataset.")
 
-# Process in two batches of 2000 papers each
+# Process in batches of 100 papers each
 batch_size = 100
-num_batches = (len(df) + batch_size - 1) // batch_size  # Ensure all papers are processed
+output_file = "classified_papers.csv"
 
-for batch_num in range(num_batches):
-    start_idx = batch_num * batch_size
+for batch_num, start_idx in enumerate(range(0, len(df), batch_size)):
     end_idx = min(start_idx + batch_size, len(df))
     df_batch = df.iloc[start_idx:end_idx].copy()
     print(f"Processing batch {batch_num + 1} ({start_idx} to {end_idx})...")
     
     df_batch["predicted_difficulty"] = df_batch["PDF Link"].apply(lambda url: classify_paper(url) if isinstance(url, str) else "Unknown")
-    df_batch.to_csv(f"classified_papers_batch_{batch_num + 1}.csv", index=False)
-    print(f"✅ Batch {batch_num + 1} saved as 'classified_papers_batch_{batch_num + 1}.csv'")
+    
+    df_batch.to_csv(output_file, mode='a', header=not os.path.exists(output_file), index=False)
+    print(f"✅ Batch {batch_num + 1} appended to '{output_file}'")
 
 print("✅ Classification complete for all batches!")
