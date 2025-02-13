@@ -5,9 +5,14 @@ import torch
 from transformers import LEDTokenizer, LEDForConditionalGeneration
 import re
 import time
+import os
+import logging
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # PostgreSQL Connection URL
-DATABASE_URL = "postgresql://neondb_owner:npg_NGhDUJ9CQe6x@ep-tight-sky-a1uq1i88-pooler.ap-southeast-1.aws.neon.tech/neondb"
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 MAX_INPUT_LENGTH = 16000  # Slightly below 16384 to avoid errors
 
@@ -115,21 +120,26 @@ def handle_unavailable_summaries():
     except Exception as e:
         print(f"Database error during summary handling: {e}")
 
-def run():
-    """Runs the summarization process for 10 iterations, then handles summaries."""
-    for i in range(10):
-        print(f"Iteration {i + 1}...")
-        update_paper_summaries()
+# Configure logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-    # Handle the unavailable summaries after 10 iterations
-    handle_unavailable_summaries()
+def run(iterations=10, cooldown=120):
+    """Runs the summarization process for a given number of iterations, then handles summaries."""
+    try:
+        for i in range(iterations):
+            logging.info(f"Iteration {i + 1}...")
+            update_paper_summaries()
 
-    # Cooldown for 2 minutes
-    print("Cooldown for 2 minutes...")
-    time.sleep(120)
+        # Handle the unavailable summaries after defined iterations
+        handle_unavailable_summaries()
 
-    # Restart the process
-    run()
+        # Cooldown period before restarting the process
+        logging.info(f"Cooldown for {cooldown // 60} minutes...")
+        time.sleep(cooldown)
 
-# Run the script
-run()
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
+
+if __name__ == "__main__":
+    while True:
+        run()

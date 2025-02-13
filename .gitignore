@@ -1,3 +1,4 @@
 cache/
 processing.log
 output/
+.env
